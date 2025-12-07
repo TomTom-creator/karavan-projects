@@ -18,3 +18,11 @@
             uri: direct
             parameters:
               name: erp-products-route
+        - to:
+            id: to-b3c1
+            uri: kamelet:spring-rabbitmq-sink
+            parameters:
+              host: rabbitmq
+              port: 5672
+              routingKey: erp-products-response
+              exchangeName: default
