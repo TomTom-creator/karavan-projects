@@ -1,0 +1,15 @@
+- rest:
+    id: rest-0f5c
+    description: ERP Products Service
+    path: products
+    get:
+      - id: get-c4ce
+        to: direct:erp-products-route
+        routeId: erp-products-rest
+- route:
+    id: erp-products-route
+    from:
+      id: from-d0d0
+      uri: direct
+      parameters:
+        name: erp-products-route

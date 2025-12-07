@@ -1,10 +1,3 @@
-- rest:
-    id: rest-09ac
-    description: ERP Products Service
-    path: products
-    get:
-      - id: get-ec60
-        to: direct:erp-products-route
 - route:
     id: erp-products-route
     from:
@@ -20,7 +13,7 @@
             id: to-6b69
             uri: http
             parameters:
-              httpUri: http://host.docker.internal:4004/odata/v4/simple-erp/Products
+              httpUri: host.docker.internal:4004/odata/v4/simple-erp/Products
               httpMethod: GET
               authMethod: Basic
               authUsername: "{{env:ERP_USER}}"
