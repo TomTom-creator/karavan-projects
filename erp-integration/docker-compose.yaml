@@ -9,3 +9,5 @@ services:
     environment:
       - ERP_USER=alice
       - ERP_PASSWORD=alice
+      - MQ_USER=guest
+      - MQ_PASSWORD=guest

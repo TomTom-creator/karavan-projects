@@ -26,3 +26,7 @@
               port: 5672
               routingKey: erp-products-response
               exchangeName: default
+              queues: erp-products-response
+              username: guest
+              autoDeclareProducer: false
+              password: "{{env:MQ_PASSWORD}}"
