@@ -1,0 +1,158 @@
+- route:
+    id: route-aa14
+    nodePrefixId: route-10a
+    from:
+      id: from-a6e7
+      uri: kamelet:spring-rabbitmq-source
+      parameters:
+        host: rabbitmq
+        port: 5672
+        queues: webshop-orders-in
+        autoDeclare: false
+        exchangeName: webshop-orders-in
+        username: guest
+        password: "{{env:MQ_PASSWORD}}"
+        exchangePattern: InOnly
+        disableReplyTo: true
+        allowNullBody: true
+      steps:
+        - convertBodyTo:
+            id: convertBodyTo-7cd9
+            type: String
+        - unmarshal:
+            id: unmarshal-584b
+            json:
+              id: json-884f
+        - log:
+            id: log-3477
+            message: "Received order from Webshop: ${body}"
+        - setHeader:
+            id: setHeader-correlation
+            name: correlationId
+            expression:
+              jsonpath:
+                id: jsonpath-corr
+                expression: $.correlationId
+        - removeHeader:
+            id: removeReplyTo
+            name: replyTo
+        - setHeader:
+            id: setHeader-40db
+            name: customerId
+            expression:
+              jsonpath:
+                id: jsonpath-e117
+                expression: $.order.customer
+        - setHeader:
+            id: setHeader-1cc7
+            name: orderDate
+            expression:
+              jsonpath:
+                id: jsonpath-e945
+                expression: $.order.orderDate
+        - setHeader:
+            id: setHeader-670b
+            name: totalAmount
+            expression:
+              jsonpath:
+                id: jsonpath-1e70
+                expression: $.order.orderAmount
+        - setHeader:
+            id: setHeader-7792
+            name: currency
+            expression:
+              jsonpath:
+                id: jsonpath-d3df
+                expression: $.order.currency
+        - setHeader:
+            id: setHeader-d63b
+            name: productId
+            expression:
+              jsonpath:
+                id: jsonpath-53fb
+                expression: $.order.items[0].product
+        - setHeader:
+            id: setHeader-9706
+            name: quantity
+            expression:
+              jsonpath:
+                id: jsonpath-ab8c
+                expression: $.order.items[0].quantity
+        - setHeader:
+            id: setHeader-d719
+            name: price
+            expression:
+              jsonpath:
+                id: jsonpath-576e
+                expression: $.order.items[0].itemAmount
+        - setBody:
+            id: setBody-97fe
+            expression:
+              simple:
+                id: simple-b922
+                expression: |
+                  {
+                    "order": {
+                      "customer": "${header.customerId}",
+                      "orderDate": "${header.orderDate}",
+                      "orderAmount": ${header.totalAmount},
+                      "currency": "${header.currency}",
+                      "items": [
+                        {
+                          "product": "${header.productId}",
+                          "quantity": ${header.quantity},
+                          "itemAmount": ${header.price},
+                          "currency": "${header.currency}"
+                        }
+                      ]
+                    }
+                  }
+        - setHeader:
+            id: setHeader-1b8e
+            name: Accept
+            expression:
+              constant:
+                id: constant-f497
+                expression: application/json
+        - setHeader:
+            id: setHeader-e45a
+            name: Content-Type
+            expression:
+              constant:
+                id: constant-0344
+                expression: application/json
+        - to:
+            id: to-erp
+            uri: http
+            parameters:
+              httpUri: http://host.docker.internal:4004/rest/api/createOrder
+              httpMethod: POST
+              authMethod: Basic
+              authUsername: "{{env:ERP_API_USER}}"
+              authPassword: "{{env:ERP_API_PASSWORD}}"
+              throwExceptionOnFailure: false
+        - log:
+            id: log-erp
+            message: "ERP HTTP Status Code: ${header.CamelHttpResponseCode}"
+        - setBody:
+            id: setBody-reply
+            expression: {}
+            simple: |
+              {
+                "correlationId": "${header.correlationId}",
+                "message": "Order processed successfully"
+              }
+        - to:
+            id: reply-to-webshop
+            uri: kamelet:spring-rabbitmq-sink
+            parameters:
+              host: rabbitmq
+              port: 5672
+              routingKey: webshop-orders-out
+              exchangeName: default
+              queues: webshop-orders-out
+              autoDeclareProducer: false
+              username: guest
+              password: "{{env:MQ_PASSWORD}}"
+              exchangePattern: InOnly
+              allowNullBody: false
