@@ -11,3 +11,5 @@ services:
       - ERP_PASSWORD=alice
       - MQ_USER=guest
       - MQ_PASSWORD=guest
+      - ERP_API_USER=service-user
+      - ERP_API_PASSWORD=service-user
