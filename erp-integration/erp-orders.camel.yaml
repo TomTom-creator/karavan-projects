@@ -1,6 +1,22 @@
 - route:
     id: route-aa14
     nodePrefixId: route-10a
+    errorHandler:
+      id: errorHandler-7cfb
+      deadLetterChannel:
+        id: deadLetterChannel-417c
+        deadLetterUri: >-
+          kamelet:spring-rabbitmq-sink?host=rabbitmq&port=5672&queues=webshop_orders_error&routingKey=webshop_orders_error&exchangeName=default&autoDeclareProducer=true&username=guest&password={{env:MQ_PASSWORD}}&exchangePattern=InOnly
+        redeliveryPolicy:
+          id: redeliveryPolicy-839c
+          maximumRedeliveries: 3
+          redeliveryDelay: "1000"
+          useExponentialBackOff: true
+          retriesExhaustedLogLevel: ERROR
+          retryAttemptedLogLevel: WARN
+        useOriginalMessage: false
+        useOriginalBody: false
+        onPrepareFailureRef: ErrorMessage
     from:
       id: from-a6e7
       uri: kamelet:spring-rabbitmq-source
@@ -92,20 +108,18 @@
                 id: simple-b922
                 expression: |
                   {
-                    "order": {
-                      "customer": "${header.customerId}",
-                      "orderDate": "${header.orderDate}",
-                      "orderAmount": ${header.totalAmount},
-                      "currency": "${header.currency}",
-                      "items": [
-                        {
-                          "product": "${header.productId}",
-                          "quantity": ${header.quantity},
-                          "itemAmount": ${header.price},
-                          "currency": "${header.currency}"
-                        }
-                      ]
-                    }
+                    "customer_ID": "${header.customerId}",
+                    "orderDate": "${header.orderDate}",
+                    "orderAmount": ${header.totalAmount},
+                    "currency_code": "${header.currency}",
+                    "items": [
+                      {
+                        "product_ID": "${header.productId}",
+                        "quantity": ${header.quantity},
+                        "itemAmount": ${header.price},
+                        "currency_code": "${header.currency}"
+                      }
+                    ]
                   }
         - setHeader:
             id: setHeader-1b8e
@@ -125,7 +139,7 @@
             id: to-erp
             uri: http
             parameters:
-              httpUri: http://host.docker.internal:4004/rest/api/createOrder
+              httpUri: http://host.docker.internal:4004/odata/v4/simple-erp/Orders
               httpMethod: POST
               authMethod: Basic
               authUsername: "{{env:ERP_API_USER}}"
